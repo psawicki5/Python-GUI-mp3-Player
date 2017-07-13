@@ -6,8 +6,8 @@ To run start music_player.py with python.
 
 Help:
 * to add songs to playlist click 'add to list' button and choose mp3 files to add (you can choose multiple files)  
-* to play clikc 'play' button  
-* to start/stop music clikc 'toggle' button  
-* to play next/prevoius song click 'next'/'previous' button
+* to play click 'play' button  
+* to start/stop music click 'toggle' button  
+* to play next/previous song click 'next'/'previous' button
 
 After current song ends, next song on the list will be played.
