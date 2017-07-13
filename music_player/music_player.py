@@ -3,7 +3,6 @@ import pygame
 from tkinter.filedialog import *
 from tkinter import *
 
-
 pygame.init()
 
 
@@ -37,71 +36,119 @@ class FrameApp(Frame):
         self.label1.grid(row=6, column=0)
 
         self.output = Text(self, wrap=WORD, width=50)
-        self.output.grid(row=7, column=0)
+        self.output.grid(row=8, column=0)
 
-        '''self.p = ttk.Progressbar(self, orient=HORIZONTAL, length=200, mode='determinate')
-        self.p.grid(row=4, column=0)'''
+        # set event to not predefined value in pygame
+        self.SONG_END = pygame.USEREVENT + 1
 
-    '''def pasek_update(self,dlugosc):
-        pozycja=0
-        while pozycja<dlugosc:
-            pozycja=(pygame.mixer.music.get_pos() / 1000)
-            proc=(pozycja/dlugosc)*100
-            print(proc," %")
-            time.sleep(1)
-            #self.pasek_update(dlugosc)'''
+        # TODO: Make progressbar, delete songs from playlist, amplify volume
 
-
-    #dodaje do listy odtwarzania kolejne utwory
     def add_to_list(self):
+        """
+        Opens window to browse data on disk and adds selected songs to play list
+        :return: None
+        """
         directory = askopenfilenames()
-        for song_name in directory:
-            self.playlist.append(song_name)
+        # appends song directory on disk to playlist in memory
+        for song_dir in directory:
+            print(song_dir)
+            self.playlist.append(song_dir)
         self.output.delete(0.0, END)
 
-        for item in range(len(self.playlist)):
-            song = EasyID3(self.playlist[item])
-            song_data = str(item+1)+str(song['title'])+" - "+str(song['artist'])
-            self.output.insert(END, str(song_data)+'\n')
+        for key, item in enumerate(self.playlist):
+            # appends song to textbox
+            song = EasyID3(item)
+            song_data = (str(key + 1) + ' : ' + song['title'][0] + ' - '
+                         + song['artist'][0])
+            self.output.insert(END, song_data + '\n')
 
-    #wyswietla w etykicie nr piosenki,nazwe i wykonawce
     def song_data(self):
-        piosenka = EasyID3(self.playlist[self.actual_song])
-        danepiosenki = "Teraz gra: Nr:"+str(self.actual_song+1)+" "+str(piosenka['title']) + " - " + str(piosenka['artist'])
-        return danepiosenki
+        """
+        Makes string of current playing song data over the text box
+        :return: string - current song data
+        """
+        song = EasyID3(self.playlist[self.actual_song])
+        song_data = "Now playing: Nr:" + str(self.actual_song + 1) + " " + \
+                    str(song['title']) + " - " + str(song['artist'])
+        return song_data
 
     def play_music(self):
-        direc=self.playlist[self.actual_song]
-        pygame.mixer.music.load((str(direc)))
+        """
+        Loads current song, plays it, sets event on song finish
+        :return: None
+        """
+        directory = self.playlist[self.actual_song]
+        pygame.mixer.music.load(directory)
         pygame.mixer.music.play(1, 0.0)
-        self.paused=False
-        self.label1['text'] = str(self.song_data())
+        pygame.mixer.music.set_endevent(self.SONG_END)
+        self.paused = False
+        self.label1['text'] = self.song_data()
+
+    def check_music(self):
+        """
+        Listens to END_MUSIC event and triggers next song to play if current 
+        song has finished
+        :return: None
+        """
+        for event in pygame.event.get():
+            if event.type == self.SONG_END:
+                self.next_song()
 
     def toggle(self):
-        print(pygame.mixer.music.get_pos() / 1000)
-        if self.paused==True:
+        """
+        Toggles current song
+        :return: None
+        """
+        if self.paused:
             pygame.mixer.music.unpause()
-            self.paused=False
-        elif self.paused==False:
+            self.paused = False
+        elif not self.paused:
             pygame.mixer.music.pause()
             self.paused = True
 
-    def next_song(self):
-        if self.actual_song+2<=len(self.playlist):
-            self.actual_song=self.actual_song+1
+    def get_next_song(self):
+        """
+        Gets next song number on playlist
+        :return: int - next song number
+        """
+        if self.actual_song + 2 <= len(self.playlist):
+            return self.actual_song + 1
         else:
-            self.actual_song=0
+            return 0
+
+    def next_song(self):
+        """
+        Plays next song
+        :return: None
+        """
+        self.actual_song = self.get_next_song()
         self.play_music()
 
-    def previous_song(self):
-        if self.actual_song-1>=0:
-            self.actual_song=self.actual_song-1
+    def get_previous_song(self):
+        """
+        Gets previous song number on playlist and returns it
+        :return: int - prevoius song number on playlist
+        """
+        if self.actual_song - 1 >= 0:
+            return self.actual_song - 1
         else:
-            self.actual_song=len(self.playlist)-1
+            return len(self.playlist) - 1
+
+    def previous_song(self):
+        """
+        Plays prevoius song
+        :return: 
+        """
+        self.actual_song = self.get_previous_song()
         self.play_music()
 
 
 root = Tk()
 root.geometry("350x500")
 app = FrameApp(root)
-app.mainloop()
+
+while True:
+    # runs mainloop of program
+    app.check_music()
+    app.update()
+
