@@ -144,6 +144,7 @@ class FrameApp(Frame):
 
 
 root = Tk()
+root.wm_iconbitmap("music.ico")
 root.geometry("350x500")
 app = FrameApp(root)
 
